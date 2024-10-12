@@ -7,14 +7,16 @@
 
 enum operartion_code
 {
-    PUSH = 1,
-    POP = 2,
-    ADD = 3,
-    SUB = 4,
-    MUL = 5,
-    DIV = 6,
-    OUT = 7,
-    HLT = 8
+    PUSH_CODE = 1,
+    POP_CODE = 2,
+    ADD_CODE = 3,
+    SUB_CODE = 4,
+    MUL_CODE = 5,
+    DIV_CODE = 6,
+    OUT_CODE = 7,
+    HLT_CODE = 8,
+    PUSHR_CODE = 9,
+    JA_CODE = 10
 };
 
 int main (void)
@@ -33,52 +35,78 @@ int main (void)
 
         if (strcmp(cmd, "push") == 0)
         {
-            machine_code[count] = PUSH;
+            machine_code[count] = PUSH_CODE;
             count++;
         }
         else if (strcmp(cmd, "pop") == 0)
         {
-            machine_code[count] = POP;
+            machine_code[count] = POP_CODE;
             count++;
         }
         else if (strcmp(cmd, "add") == 0)
         {
-            machine_code[count] = ADD;
+            machine_code[count] = ADD_CODE;
             count++;
         }
         else if (strcmp(cmd, "sub") == 0)
         {
-            machine_code[count] = SUB;
+            machine_code[count] = SUB_CODE;
             count++;
         }
         else if (strcmp(cmd, "mul") == 0)
         {
-            machine_code[count] = MUL;
+            machine_code[count] = MUL_CODE;
             count++;
         }
         else if (strcmp(cmd, "div") == 0)
         {
-            machine_code[count] = DIV;
+            machine_code[count] = DIV_CODE;
             count++;
         }
         else if (strcmp(cmd, "out") == 0)
         {
-            machine_code[count] = OUT;
+            machine_code[count] = OUT_CODE;
             count++;
         }
         else if (strcmp(cmd, "hlt") == 0)
         {
-            machine_code[count] = HLT;
+            machine_code[count] = HLT_CODE;
+            count++;
+        }
+        else if (strcmp(cmd, "pushr") == 0)
+        {
+            machine_code[count] = PUSHR_CODE;
+            count++;
+        }
+        else if (strcmp(cmd, "ja") == 0)
+        {
+            machine_code[count] = JA_CODE;
             count++;
         }
 
-        if (strcmp(cmd, "push") == 0)
+        if (strcmp(cmd, "push") == 0 || strcmp(cmd, "ja") == 0)
         {
             int c = 0;
 
             fscanf(people_code, "%d", &c);
 
             machine_code[count] = c;
+
+            count++;
+        }
+
+        if (strcmp(cmd, "pushr") == 0 || strcmp(cmd, "pop") == 0)
+        {
+            char c[2] = {};
+
+            fscanf(people_code, "%s", c);
+
+            if (c == "ax")
+                machine_code[count] = 0;
+            if (c == "bx")
+                machine_code[count] = 1;
+            if (c == "cx")
+                machine_code[count] = 2;
 
             count++;
         }

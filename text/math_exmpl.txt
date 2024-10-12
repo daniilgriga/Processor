@@ -1,13 +1,14 @@
-push 30
-push 70
-add
-push 60
-push 40
-sub
-div
-push 7
-push 3
-add
+push 0
+pop ax
+pushr ax
+pushr ax
 mul
 out
+pushr ax
+push 1
+add
+pop ax
+pushr ax
+push 10
+ja 4
 hlt

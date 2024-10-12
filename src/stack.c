@@ -151,34 +151,34 @@ int stack_dump (struct stack_str* stack, const char* file, int line, const char*
 
 int stack_error (struct stack_str* stack)
 {
-    int err = 0;
+    int stack_err = 0;
 
     if (stack == NULL)
-        err |= STACK_IS_NULL;
+        stack_err |= STACK_IS_NULL;
 
     if (stack->data == NULL)
-        err |= STACK_DATA_IS_NULL;
+        stack_err |= STACK_DATA_IS_NULL;
 
     if (stack->size < 0)
-        err |= STACK_BAD_SIZE;
+        stack_err |= STACK_BAD_SIZE;
 
     if ((stack->size) > (stack->capacity))
-        err |= STACK_SIZE_IS_LESS_CAPACITY;
+        stack_err |= STACK_SIZE_IS_LESS_CAPACITY;
 
     ON_CNR_PRTCT ( if (memcmp(&stack->canary_stack_1, &CANARY_VALUE, sizeof(CANARY_VALUE)) ||
                        memcmp(&stack->canary_stack_2, &CANARY_VALUE, sizeof(CANARY_VALUE)))
-                       err |= STACK_CANARY_PROBLEM;
+                       stack_err |= STACK_CANARY_PROBLEM;
 
                    if (memcmp(&stack->data[-1],              &CANARY_BUFFER_VALUE, sizeof(CANARY_BUFFER_VALUE)) ||
                        memcmp(&stack->data[stack->capacity], &CANARY_BUFFER_VALUE, sizeof(CANARY_BUFFER_VALUE)))
-                       err |= STACK_DATA_CANARY_PROBLEM; )
+                       stack_err |= STACK_DATA_CANARY_PROBLEM; )
 
     ON_HASH    ( hash_t old_hash_st = stack->hash_st;
                  stack->hash_st = 0;
                  stack->hash_st = hash_djb2((const char*)stack, sizeof(*stack));
 
                  if (old_hash_st != stack->hash_st)
-                     err |= STACK_HASH_PROBLEM;
+                     stack_err |= STACK_HASH_PROBLEM;
 
                  stack->hash_st = old_hash_st;
 
@@ -187,20 +187,20 @@ int stack_error (struct stack_str* stack)
                  stack->hash_b  = hash_djb2((const char*)(stack->data ON_CNR_PRTCT(- 1)), (size_t)stack->capacity * sizeof (stack->data[0]));
 
                  if (old_hash_b != stack->hash_b)
-                     err |= STACK_DATA_HASH_PROBLEM;
+                     stack_err |= STACK_DATA_HASH_PROBLEM;
 
                  stack->hash_b = old_hash_b; )
 
-    return err;
+    return stack_err;
 }
 
-int error_code_output (int err)
+int error_code_output (int stack_err)
 {
-    printf(RED_TEXT("ERROR: "));
+    printf(RED_TEXT("ERROR IN STACK: "));
 
-    convert_to_binary(err);
+    convert_to_binary(stack_err);
 
-    switch (err)
+    switch (stack_err)
     {
         case STACK_IS_NULL:
             printf(RED_TEXT(" - STACK_IS_NULL"));
@@ -227,7 +227,7 @@ int error_code_output (int err)
             printf(RED_TEXT(" - STACK_DATA_HASH_PROBLEM"));
             break;
         default:
-            printf(RED_TEXT(" - UNKNOWN ERROR"));
+            printf(RED_TEXT(" - UNKNOWN ERROR IN STACK"));
     }
 
     printf("\n");
