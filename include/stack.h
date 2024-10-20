@@ -1,9 +1,9 @@
 #ifndef STACK_H_
 #define STACK_H_
 
-#define CANARY_PROTECTION
+// #define CANARY_PROTECTION
 // #define DEBUG
-#define HASH
+// #define HASH
 
 #include <stdbool.h>
 
@@ -32,7 +32,7 @@
 #endif
 
 typedef unsigned long hash_t;
-typedef double stack_elem_t;
+typedef long long stack_elem_t;
 
 #pragma GCC diagnostic ignored "-Wlarger-than=8192"
 #pragma GCC diagnostic ignored "-Wstack-protector"

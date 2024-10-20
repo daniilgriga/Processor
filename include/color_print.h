@@ -1,7 +1,7 @@
 #ifndef COLOR_PRINT_H_
 #define COLOR_PRINT_H_
 
-#define YELLOW       "\033[1;33m"
+#define YELLOW      "\033[1;33m"
 #define RED         "\033[1;31m"
 #define GREEN       "\033[1;32m"
 #define LIGHT_BLUE  "\033[1;36m"
@@ -13,8 +13,8 @@
 #define BLUE_TEXT(text)       BLUE text CLEAR_COLOR
 #define LIGHT_BLUE_TEXT(text) LIGHT_BLUE text CLEAR_COLOR
 #define GREEN_TEXT(text)      GREEN text CLEAR_COLOR
-#define RED_TEXT(text)      RED text CLEAR_COLOR
-#define YELLOW_TEXT(text)      YELLOW text CLEAR_COLOR
+#define RED_TEXT(text)        RED text CLEAR_COLOR
+#define YELLOW_TEXT(text)     YELLOW text CLEAR_COLOR
 
 
 #endif // COLOR_PRINT_H_

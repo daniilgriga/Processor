@@ -8,7 +8,7 @@
 #include "color_print.h"
 #include "stack.h"
 
-const stack_elem_t STACK_POISON_ELEM = -666.13;
+const stack_elem_t STACK_POISON_ELEM = -666;
 
 const double CANARY_VALUE        = (0xBAD);
 const double CANARY_BUFFER_VALUE = (0xEDA);
@@ -104,6 +104,9 @@ int stack_pop (struct stack_str* stack, stack_elem_t* x ON_DBG(, const char* fil
 {
     STACK_ASSERT(stack, file, line, func);
 
+    if (stack->size <= 0)
+        return STACK_BAD_SIZE;
+
     *x = stack->data[stack->size - 1];
     stack->data[--stack->size] = STACK_POISON_ELEM;
 
@@ -138,9 +141,9 @@ int stack_dump (struct stack_str* stack, const char* file, int line, const char*
     for (int i = 0; i < stack->capacity; i++)
     {
         if (memcmp(&stack->data[i], &STACK_POISON_ELEM, sizeof(STACK_POISON_ELEM)) == 0)
-            printf("stack->data[%d] = "BLUE_TEXT("%g (POISON)")"\n", i, stack->data[i]);
+            printf("stack->data[%d] = "BLUE_TEXT("%lld (POISON)")"\n", i, stack->data[i]);
         else
-            printf("stack->data[%d] = "BLUE_TEXT("%g")"\n", i, stack->data[i]);
+            printf("stack->data[%d] = "BLUE_TEXT("%lld")"\n", i, stack->data[i]);
     }
 
     ON_CNR_PRTCT ( printf("\ncanary_3 in buffer = "BLUE_TEXT("0x%x")"\n\n", (unsigned int)stack->data[-1]);
