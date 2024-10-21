@@ -141,9 +141,9 @@ int stack_dump (struct stack_str* stack, const char* file, int line, const char*
     for (int i = 0; i < stack->capacity; i++)
     {
         if (memcmp(&stack->data[i], &STACK_POISON_ELEM, sizeof(STACK_POISON_ELEM)) == 0)
-            printf("stack->data[%d] = "BLUE_TEXT("%lld (POISON)")"\n", i, stack->data[i]);
+            printf("stack->data[%d] = "BLUE_TEXT("%d (POISON)")"\n", i, stack->data[i]);
         else
-            printf("stack->data[%d] = "BLUE_TEXT("%lld")"\n", i, stack->data[i]);
+            printf("stack->data[%d] = "BLUE_TEXT("%d")"\n", i, stack->data[i]);
     }
 
     ON_CNR_PRTCT ( printf("\ncanary_3 in buffer = "BLUE_TEXT("0x%x")"\n\n", (unsigned int)stack->data[-1]);

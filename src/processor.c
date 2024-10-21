@@ -19,7 +19,6 @@ enum operartion_code
     DIV_CODE   = 6,
     OUT_CODE   = 7,
     HLT_CODE   = 8,
-    PUSHR_CODE = 9,
     JA_CODE    = 10,
     CALL_CODE  = 11,
     RET_CODE   = 12
@@ -64,13 +63,15 @@ int processor_assert (struct SPU* processor);
 
 int filling_the_code (struct SPU* processor, struct head* header);
 
-int get_arg (struct SPU* processor);
+int* get_arg (struct SPU* processor);
 
 int main (void)
 {
     struct head header   = {};
     struct SPU processor = {};
     processor_ctor (&processor, &header);
+
+
 
     int cycle = 1;
     while (cycle)
@@ -82,28 +83,18 @@ int main (void)
         {
             case PUSH_CODE:
             {
-                stack_push (&processor.stack, processor.code[processor.ip + 1]);
+                stack_push (&processor.stack, *get_arg(&processor));
 
-                processor.ip += 2;
-                break;
-            }
-
-            case PUSHR_CODE:
-            {
-                stack_push (&processor.stack, processor.registers[processor.code[processor.ip + 1]]);
-
-                processor.ip += 2;
                 break;
             }
 
             case POP_CODE:
             {
-                stack_elem_t a = 0;
-                stack_pop (&processor.stack, &a);
+                int* ptr = get_arg(&processor);
+                stack_pop (&processor.stack, ptr);
 
-                processor.registers[1] = (int) a;
+                processor.registers[1] = *ptr;
 
-                processor.ip += 2;
                 break;
             }
 
@@ -111,11 +102,12 @@ int main (void)
             {
                 stack_elem_t a = 0;
                 stack_elem_t b = 0;
-                stack_pop (&processor.stack, &a);
-                stack_pop (&processor.stack, &b);
+                stack_pop  (&processor.stack, &a);
+                stack_pop  (&processor.stack, &b);
                 stack_push (&processor.stack, a + b);
 
                 processor.ip += 1;
+
                 break;
             }
 
@@ -123,11 +115,12 @@ int main (void)
             {
                 stack_elem_t a = 0;
                 stack_elem_t b = 0;
-                stack_pop (&processor.stack, &a);
-                stack_pop (&processor.stack, &b);
+                stack_pop  (&processor.stack, &a);
+                stack_pop  (&processor.stack, &b);
                 stack_push (&processor.stack, b - a);
 
                 processor.ip += 1;
+
                 break;
             }
 
@@ -135,11 +128,12 @@ int main (void)
             {
                 stack_elem_t a = 0;
                 stack_elem_t b = 0;
-                stack_pop (&processor.stack, &a);
-                stack_pop (&processor.stack, &b);
+                stack_pop  (&processor.stack, &a);
+                stack_pop  (&processor.stack, &b);
                 stack_push (&processor.stack, a * b);
 
                 processor.ip += 1;
+
                 break;
             }
 
@@ -147,11 +141,18 @@ int main (void)
             {
                 stack_elem_t a = 0;
                 stack_elem_t b = 0;
-                stack_pop (&processor.stack, &a);
-                stack_pop (&processor.stack, &b);
+                stack_pop  (&processor.stack, &a);
+                stack_pop  (&processor.stack, &b);
+                if (a == 0)
+                {
+                    printf("you tried to divide by zero, be more careful");
+                    assert(0);
+                }
+
                 stack_push (&processor.stack, b / a);
 
                 processor.ip += 1;
+
                 break;
             }
 
@@ -160,9 +161,10 @@ int main (void)
                 stack_elem_t x = 0;
                 stack_pop (&processor.stack, &x);
 
-                printf(RED_TEXT("OUTPUT: %lld\n\n"), x);
+                printf(RED_TEXT("OUTPUT: %d\n\n"), x);
 
                 processor.ip += 1;
+
                 break;
             }
 
@@ -170,6 +172,7 @@ int main (void)
             {
                 printf(RED_TEXT(">>> EXIT!!!\n\n"));
                 cycle = 0;
+
                 break;
             }
 
@@ -194,17 +197,21 @@ int main (void)
         }
     }
 
+    printf("\nregisters: "BLUE_TEXT("[ax]")" = %d  "BLUE_TEXT("[bx]")" = %d  "BLUE_TEXT("[cx]")" = %d  "BLUE_TEXT("[dx]")" = %d\n\n",
+            processor.registers[1], processor.registers[2], processor.registers[3], processor.registers[4]);
+
     processor_dtor (&processor);
 
     return 0;
 }
+
+// machine code execution func
 
 int filling_the_code (struct SPU* processor, struct head* header)
 {
     FILE* assm = fopen ("tests/machine_lg.bin", "rb");
 
     assert (assm);
-
     fread (processor->code, sizeof(*header), 1, assm);
 
     header->sig = (uint32_t) processor->code[0];
@@ -214,6 +221,16 @@ int filling_the_code (struct SPU* processor, struct head* header)
 
     fread (processor->code, sizeof(int), (size_t) header->size, assm);
 
+#if 0
+    FILE* assm = fopen("tests/machine_lngg.txt", "r");
+    assert(assm);
+
+    header->size = 24;
+
+    for (int i = 0; i < header->size; i++)
+        fscanf(assm, "%d", &processor->code[i]);
+#endif
+
     fclose (assm);
 
     return 0;
@@ -221,7 +238,7 @@ int filling_the_code (struct SPU* processor, struct head* header)
 
 int processor_dump (struct SPU* processor, struct head* header)
 {
-    printf (LIGHT_BLUE_TEXT("----------------------------------------------------------------------------------------------------------\n\n"));
+    printf (LIGHT_BLUE_TEXT("-----------------------------------------------------------------------------------------------------\n\n"));
 
     printf (BLUE_TEXT("code:"));
     for (int i = 0; i < header->size; i++)
@@ -236,9 +253,9 @@ int processor_dump (struct SPU* processor, struct head* header)
 
     printf (BLUE_TEXT("stack: "));
     for (int i = 0; i < processor->stack.capacity; i++)
-        printf("%s" BLUE_TEXT("[%d]") "%lld", (i? ", " : ""), i, processor->stack.data[i]);
+        printf("%s" BLUE_TEXT("[%d]") "%d", (i? ", " : ""), i, processor->stack.data[i]);
 
-    printf (LIGHT_BLUE_TEXT("\n\n----------------------------------------------------------------------------------------------------------\n"));
+    printf (LIGHT_BLUE_TEXT("\n\n-----------------------------------------------------------------------------------------------------\n"));
 
     getchar ();
 
@@ -256,6 +273,12 @@ int processor_ctor (struct SPU* processor, struct head* header)
     filling_the_code (processor, header);
 
     stack_ctor (&processor->stack, 2);
+
+    for (int i = 1; i < 5; i++)
+        processor->registers[i] = 10 * i;
+
+    for (int i = 0; i < 50; i++)
+        processor->RAM[i] = 10 * i;
 
     processor_assert (processor);
 
@@ -345,17 +368,21 @@ int processor_dtor (struct SPU* processor)
     return 0;
 }
 
-/*int get_arg (struct SPU* processor)
+int* get_arg (struct SPU* processor)
 {
-    int op_code   = processor->code[(*processor->ip)++];
-    int arg_type  = processor->code[(*processor->ip)++];
-    int arg_value = 0;
+    int  op_code   = processor->code[processor->ip++]; (void)op_code;
+    int  arg_type  = processor->code[processor->ip++];
+    int  arg_value = 0;
+    int* value_addr = NULL;
 
-    if (arg_type & 1) {arg_value = processor->code[(*processor->ip)++];}
-    if (arg_type & 2) {arg_value = processor->registers[processor->code[(*processor->ip)++]];}
-    if (arg_type & 4) {arg_value = processor->RAM[arg_value];}
+    if (arg_type & 1) { value_addr = &processor->code[processor->ip];
+                        arg_value  =  processor->code[processor->ip++]; }
 
-    return arg_value;
-}*/
+    if (arg_type & 2) { value_addr = &processor->registers[processor->code[processor->ip]];
+                        arg_value +=  processor->registers[processor->code[processor->ip++]]; }
 
+    if (arg_type & 4) { value_addr = &processor->RAM[arg_value]; }
+
+    return value_addr;
+}
 

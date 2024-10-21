@@ -33,7 +33,6 @@ enum operartion_code
     DIV_CODE   =  6,
     OUT_CODE   =  7,
     HLT_CODE   =  8,
-    PUSHR_CODE =  9,
     JA_CODE    = 10,
     CALL_CODE  = 11,
     RET_CODE   = 12
@@ -48,6 +47,8 @@ int assembly (int* machine_code, struct mtk* metkas);
 int filling_the_code (int* machine_code, struct mtk* metkas, int count);
 
 int machine_code_dump (int count_itk, int* machine_code);
+
+int compile_arg (char* cmd, int* machine_code, int* count);
 
 int main (void)
 {
@@ -89,7 +90,7 @@ int assembly (int* machine_code, struct mtk* metkas)
         if (fscanf(people_code, "%s", cmd) != 1)
             break;
 
-        printf (">>>" BLUE_TEXT("[%02d = 0x%04x]") PURPLE_TEXT("cmd")" = '%s'\n", count_itr, (uint)count_itr, cmd);
+        printf (">>> " BLUE_TEXT("[%02d = 0x%04x]") PURPLE_TEXT("cmd")" = "YELLOW_TEXT("'%s'")"\n", count_itr, (uint)count_itr, cmd);
 
         if (strchr(cmd, ':') != NULL)
         {
@@ -113,31 +114,18 @@ int assembly (int* machine_code, struct mtk* metkas)
             machine_code[count_itr] = PUSH_CODE;
             count_itr++;
 
-            int num = 0;
+            fscanf (people_code, "%s", cmd);
 
-            fscanf(people_code, "%d", &num);
-
-            machine_code[count_itr] = num;
-
-            count_itr++;
+            compile_arg (cmd, machine_code, &count_itr);
         }
         else if (strcmp(cmd, "pop") == 0)
         {
             machine_code[count_itr] = POP_CODE;
             count_itr++;
 
-            char num[MAX_SIZE] = {};
+            fscanf (people_code, "%s", cmd);
 
-            fscanf(people_code, "%s", num);
-
-            if (strcmp(num, "ax") == 0)
-                machine_code[count_itr] = 1;
-            if (strcmp(num, "bx") == 0)
-                machine_code[count_itr] = 2;
-            if (strcmp(num, "cx") == 0)
-                machine_code[count_itr] = 3;
-
-            count_itr++;
+            compile_arg (cmd, machine_code, &count_itr);
         }
         else if (strcmp(cmd, "add") == 0)
         {
@@ -169,24 +157,6 @@ int assembly (int* machine_code, struct mtk* metkas)
             machine_code[count_itr] = HLT_CODE;
             count_itr++;
         }
-        else if (strcmp(cmd, "pushr") == 0)
-        {
-            machine_code[count_itr] = PUSHR_CODE;
-            count_itr++;
-
-            char num[MAX_SIZE] = {};
-
-            fscanf(people_code, "%s", num);
-
-            if (strcmp(num, "ax") == 0)
-                machine_code[count_itr] = 1;
-            if (strcmp(num, "bx") == 0)
-                machine_code[count_itr] = 2;
-            if (strcmp(num, "cx") == 0)
-                machine_code[count_itr] = 3;
-
-            count_itr++;
-        }
         else if (strcmp(cmd, "ja") == 0)
         {
             printf (">>> >>> GOT: ja\n");
@@ -215,7 +185,7 @@ int assembly (int* machine_code, struct mtk* metkas)
         }
     }
 
-    printf("\n-------------------------------------------------------------------------\n\n");
+    printf("\n");
 
     fclose(people_code);
 
@@ -224,15 +194,23 @@ int assembly (int* machine_code, struct mtk* metkas)
 
 int filling_the_code (int* machine_code, struct mtk* /*metkas*/, int count)
 {
-    struct head header = { 0x584C4E44, VERSION, count };
+    printf(BLUE_TEXT("%s():") PURPLE_TEXT("count_cmmnds")" = "YELLOW_TEXT("%d")"\n", __FUNCTION__, count);
 
-    printf("%s(): count_cmmnds = %d\n", __FUNCTION__, count);
+    struct head header = { 0x584C4E44, VERSION, count };
 
     FILE* machine = fopen("tests/machine_lg.bin", "wb");
     assert (machine);
 
     fwrite (&header     , sizeof (header)         , 1    , machine);
     fwrite (machine_code, sizeof (machine_code[0]), (size_t)count, machine);
+
+#if 0
+    FILE* machine = fopen("tests/machine_lngg.txt", "w");
+    assert (machine);
+
+    for (int i = 0; i < count; i++)
+        fprintf(machine, "%d  ", machine_code[i]);
+#endif
 
     fclose(machine);
 
@@ -254,15 +232,96 @@ int machine_code_dump (int count_itk, int* machine_code)
     for (int i = 0; i < count_itk; i++)
         printf (GREEN_TEXT("  %02d "), machine_code[i]);
 
-    printf (PURPLE_TEXT("\n       %*s^ ip = %02d\n\n"), ip * 5, "", ip);
+    printf (PURPLE_TEXT("\n       %*s^ ip = %02d"), ip * 5, "", ip);
 
-    /*printf (BLUE_TEXT("stack: "));
-    for (int i = 0; i < count_itk; i++)
-        printf("%s" BLUE_TEXT("[%d]") "%f", (i? ", " : ""), i, machine_code[i]);
-     */
     printf (LIGHT_BLUE_TEXT("\n\n----------------------------------------------------------------------------------------------------------\n"));
 
     getchar ();
 
     return 0;
+}
+
+int compile_arg (char* cmd, int* machine_code, int* count)
+{
+    int have_bracket = (strchr (cmd, '[') != NULL);
+    int have_plus    = (strchr (cmd, '+') != NULL);
+    printf(GREEN_TEXT("have_bracket")" = "YELLOW_TEXT("%d")", "GREEN_TEXT("have_plus")" = "YELLOW_TEXT("%d")"\n\n", have_bracket, have_plus);
+
+    if (have_bracket && have_plus)
+    {
+        char str[MAX_SIZE] = {};
+        int num = 0;
+
+        int res = sscanf (cmd, "[%1[a-d]x + %d]", str, &num);
+        assert (res == 2);
+
+        machine_code[(*count)++] = 0b00000111;
+        machine_code[(*count)++] = num;
+        machine_code[(*count)++] = str[0] - 'a' + 1;
+
+        return 0;
+    }
+
+    if (have_bracket && !have_plus)
+    {
+        char str[MAX_SIZE] = {};
+        int num = 0;
+
+        int res_1 = sscanf (cmd, "[%1[a-d]x]", str);
+        int res_2 = sscanf (cmd, "[%d]", &num);
+
+        if (res_1 == 1)
+        {
+            machine_code[(*count)++] = 0b00000110;
+            machine_code[(*count)++] = str[0] - 'a' + 1;
+        }
+
+        if (res_2 == 1)
+        {
+            machine_code[(*count)++] = 0b00000101;
+            machine_code[(*count)++] = num;
+        }
+
+        return 0;
+    }
+
+    if (!have_bracket && have_plus)
+    {
+        char str[MAX_SIZE] = {};
+        int num = 0;
+
+        int res = sscanf (cmd, "%1[a-d]x + %d", str, &num);
+        assert (res == 2);
+
+        machine_code[(*count)++] = 0b00000011;
+        machine_code[(*count)++] = num;
+        machine_code[(*count)++] = str[0] - 'a' + 1;
+
+        return 0;
+    }
+
+    if (!have_bracket && !have_plus)
+    {
+        char str[MAX_SIZE] = {};
+        int num = 0;
+
+        int res_1 = sscanf (cmd, "%1[a-d]x", str);
+        int res_2 = sscanf (cmd, "%d", &num);
+
+        if (res_1 == 1)
+        {
+            machine_code[(*count)++] = 0b00000010;
+            machine_code[(*count)++] = str[0] - 'a' + 1;
+        }
+
+        if (res_2 == 1)
+        {
+            machine_code[(*count)++] = 0b00000001;
+            machine_code[(*count)++] = num;
+        }
+
+        return 0;
+    }
+
+    return 1;
 }

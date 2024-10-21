@@ -32,7 +32,7 @@
 #endif
 
 typedef unsigned long hash_t;
-typedef long long stack_elem_t;
+typedef int stack_elem_t;
 
 #pragma GCC diagnostic ignored "-Wlarger-than=8192"
 #pragma GCC diagnostic ignored "-Wstack-protector"
