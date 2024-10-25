@@ -8,7 +8,7 @@
 
 #define MAX_SIZE 30
 #define VERSION  2
-#define MAX_ARR  100
+#define MAX_ARR  250
 
 struct head
 {
@@ -31,11 +31,17 @@ enum operartion_code
     SUB_CODE   =  4,
     MUL_CODE   =  5,
     DIV_CODE   =  6,
-    OUT_CODE   =  7,
     HLT_CODE   =  8,
+    JNE_CODE   =  9,
     JA_CODE    = 10,
     CALL_CODE  = 11,
-    RET_CODE   = 12
+    RET_CODE   = 12,
+    DRAW_CODE  = 13,
+    JE_CODE    = 14,
+    JB_CODE    = 15,
+    SQRT_CODE  = 16,
+    IN_CODE    = 17,
+    OUT_CODE   = 18
 };
 
 int label_ctor (struct mtk* metkas);
@@ -173,14 +179,92 @@ int assembly (int* machine_code, struct mtk* metkas)
 
             count_itr++;
         }
+        else if (strcmp(cmd, "jb") == 0)
+        {
+            printf (">>> >>> GOT: jb\n");
+
+            machine_code[count_itr] = JB_CODE;
+            count_itr++;
+
+            int num = 0;
+            fscanf(people_code, "%d:", &num);
+
+            printf (">>> >>> >>> num = %d\n", num);
+
+            machine_code[count_itr] = metkas[num].addr;
+
+            count_itr++;
+        }
         else if (strcmp(cmd, "call") == 0)
         {
             machine_code[count_itr] = CALL_CODE;
+            count_itr++;
+
+            int num = 0;
+
+            fscanf(people_code, "%d:", &num);
+
+            printf (">>> >>> >>> num = %d\n", num);
+
+            machine_code[count_itr] = metkas[num].addr;
+
             count_itr++;
         }
         else if (strcmp(cmd, "ret") == 0)
         {
             machine_code[count_itr] = RET_CODE;
+            count_itr++;
+        }
+        else if (strcmp(cmd, "draw") == 0)
+        {
+            machine_code[count_itr] = DRAW_CODE;
+            count_itr++;
+        }
+        else if (strcmp(cmd, "je") == 0)
+        {
+            printf (">>> >>> GOT: je\n");
+
+            machine_code[count_itr] = JE_CODE;
+            count_itr++;
+
+            int num = 0;
+            fscanf(people_code, "%d:", &num);
+
+            printf (">>> >>> >>> num = %d\n", num);
+
+            machine_code[count_itr] = metkas[num].addr;
+
+            count_itr++;
+        }
+        else if (strcmp(cmd, "jne") == 0)
+        {
+            printf (">>> >>> GOT: je\n");
+
+            machine_code[count_itr] = JNE_CODE;
+            count_itr++;
+
+            int num = 0;
+            fscanf(people_code, "%d:", &num);
+
+            printf (">>> >>> >>> num = %d\n", num);
+
+            machine_code[count_itr] = metkas[num].addr;
+
+            count_itr++;
+        }
+        else if (strcmp(cmd, "sqrt") == 0)
+        {
+            machine_code[count_itr] = SQRT_CODE;
+            count_itr++;
+        }
+        else if (strcmp(cmd, "in") == 0)
+        {
+            machine_code[count_itr] = IN_CODE;
+            count_itr++;
+        }
+        else if (strcmp(cmd, "out") == 0)
+        {
+            machine_code[count_itr] = OUT_CODE;
             count_itr++;
         }
     }
