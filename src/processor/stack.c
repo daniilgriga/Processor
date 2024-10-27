@@ -5,7 +5,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "color_print.h"
+#include "../include/color_print.h"
 #include "stack.h"
 
 const stack_elem_t STACK_POISON_ELEM = -666;

@@ -4,87 +4,63 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "color_print.h"
+#include "../include/color_print.h"
+#include "../include/enum.h"
+#include "assembler.h"
+#include "struct.h"
 
-#define MAX_SIZE 30
-#define VERSION  2
-#define MAX_ARR  250
+int label_ctor (struct metka_t* metkas);
 
-struct head
-{
-    uint32_t sig;
-    int      ver;
-    int      size;
-};
+int label_dtor (struct metka_t* metkas);
 
-struct mtk
-{
-    char  name_mtk[MAX_SIZE];
-    int   addr;
-};
+int assembly (int* machine_code, struct metka_t* metkas, const char* filename);
 
-enum operartion_code
-{
-    PUSH_CODE  =  1,
-    POP_CODE   =  2,
-    ADD_CODE   =  3,
-    SUB_CODE   =  4,
-    MUL_CODE   =  5,
-    DIV_CODE   =  6,
-    HLT_CODE   =  8,
-    JNE_CODE   =  9,
-    JA_CODE    = 10,
-    CALL_CODE  = 11,
-    RET_CODE   = 12,
-    DRAW_CODE  = 13,
-    JE_CODE    = 14,
-    JB_CODE    = 15,
-    SQRT_CODE  = 16,
-    IN_CODE    = 17,
-    OUT_CODE   = 18
-};
-
-int label_ctor (struct mtk* metkas);
-
-int label_dtor (struct mtk* metkas);
-
-int assembly (int* machine_code, struct mtk* metkas);
-
-int filling_the_code (int* machine_code, struct mtk* metkas, int count);
+int load_code (int* machine_code, int count, const char* filename);
 
 int machine_code_dump (int count_itk, int* machine_code);
 
 int compile_arg (char* cmd, int* machine_code, int* count);
 
-int main (void)
+int main (int argc, const char* argv[])
 {
-    int machine_code[MAX_ARR] = {};
-    struct mtk metkas[MAX_SIZE] = {};
+    const char* in_filename  = (argc >= 2)? argv[1] : "math_exmpl.asm";
+    const char* out_filename = (argc >= 3)? argv[2] : "math_exmpl.bin";
+
+    int      machine_code[MAX_ARR]  = {};
+    struct metka_t metkas[MAX_SIZE] = {};
 
     for (int i = 0; i < MAX_SIZE; i++)
-                metkas[i].addr = -1;
+        metkas[i].addr = -1;
 
-    int count_cmmnds = assembly (machine_code, metkas);
+    int count_cmmnds = assembly (machine_code, metkas, in_filename);
+
+    if (count_cmmnds == -1)
+        return 1;
+
     machine_code_dump (count_cmmnds, machine_code);
 
-    assembly (machine_code, metkas);
+    assembly (machine_code, metkas, in_filename);
+
     machine_code_dump (count_cmmnds, machine_code);
 
-    filling_the_code (machine_code, metkas, count_cmmnds);
+    if (load_code (machine_code, count_cmmnds, out_filename) == 1)
+    {
+        printf(RED_TEXT("ERROR")" in load_code, fwrite returns 0\n");
+        return 1;
+    }
 
     return 0;
 }
 
-/*int label_ctor (struct mtk* metka)
+int assembly (int* machine_code, struct metka_t* metkas, const char* filename)
 {
-    assert(metka);
-    metka->name_mtk = (char*) calloc ((size_t) MAX_SIZE, sizeof(metka->name_mtk[0]));
-}*/
-
-int assembly (int* machine_code, struct mtk* metkas)
-{
-    FILE* people_code = fopen("tests/math_exmpl.asm", "r");
-    assert (people_code);
+    FILE* people_code = fopen(filename, "r"); // NOTE rb
+    if (people_code == NULL)
+    {
+        fprintf (stderr, RED_TEXT ("ERROR: ")"[people_code] = NULL, file %s: ", filename);
+        perror ("");
+        return -1;
+    }
 
     int count_mtk = 0;
     int count_itr = 0;
@@ -93,7 +69,7 @@ int assembly (int* machine_code, struct mtk* metkas)
     {
         char cmd[MAX_ARR] = {};
 
-        if (fscanf(people_code, "%s", cmd) != 1)
+        if (fscanf(people_code, "%10s", cmd) != 1)
             break;
 
         printf (">>> " BLUE_TEXT("[%02d = 0x%04x]") PURPLE_TEXT("cmd")" = "YELLOW_TEXT("'%s'")"\n", count_itr, (uint)count_itr, cmd);
@@ -114,6 +90,9 @@ int assembly (int* machine_code, struct mtk* metkas)
                 if (metkas[i].addr) printf (BLUE_TEXT("[%d]:")"%d ", i, metkas[i].addr);
             printf ("\n    <<< (end)\n");
         }
+
+        // TODO make function that returns enum by command name
+        // TODO switch
 
         if (strcmp(cmd, "push") == 0)
         {
@@ -191,7 +170,7 @@ int assembly (int* machine_code, struct mtk* metkas)
 
             printf (">>> >>> >>> num = %d\n", num);
 
-            machine_code[count_itr] = metkas[num].addr;
+            machine_code[count_itr] = metkas[num].addr; // TODO check if metka exists
 
             count_itr++;
         }
@@ -267,6 +246,11 @@ int assembly (int* machine_code, struct mtk* metkas)
             machine_code[count_itr] = OUT_CODE;
             count_itr++;
         }
+        /*else
+        {
+            printf("\nERROR: unknown command\n");
+            return -1;
+        }*/ //FIXME
     }
 
     printf("\n");
@@ -276,25 +260,24 @@ int assembly (int* machine_code, struct mtk* metkas)
     return count_itr;
 }
 
-int filling_the_code (int* machine_code, struct mtk* /*metkas*/, int count)
+int load_code (int* machine_code, int count, const char* filename)
 {
     printf(BLUE_TEXT("%s():") PURPLE_TEXT("count_cmmnds")" = "YELLOW_TEXT("%d")"\n", __FUNCTION__, count);
 
-    struct head header = { 0x584C4E44, VERSION, count };
+    struct header_t header = { SIGNATURE, VERSION, count };
 
-    FILE* machine = fopen("tests/machine_lg.bin", "wb");
-    assert (machine);
+    FILE* machine = fopen(filename, "wb");
+    if (machine == NULL)
+    {
+        fprintf (stderr, RED_TEXT ("ERROR: ")"[machine] = NULL, filename %s: ", filename);
+        perror ("");
+        return -1;
+    }
 
-    fwrite (&header     , sizeof (header)         , 1    , machine);
-    fwrite (machine_code, sizeof (machine_code[0]), (size_t)count, machine);
-
-#if 0
-    FILE* machine = fopen("tests/machine_lngg.txt", "w");
-    assert (machine);
-
-    for (int i = 0; i < count; i++)
-        fprintf(machine, "%d  ", machine_code[i]);
-#endif
+    if (fwrite (&header     , sizeof (header)         , 1            , machine) == 0)
+        return 1;
+    if (fwrite (machine_code, sizeof (machine_code[0]), (size_t)count, machine) == 0)
+        return 1;
 
     fclose(machine);
 
@@ -320,6 +303,7 @@ int machine_code_dump (int count_itk, int* machine_code)
 
     printf (LIGHT_BLUE_TEXT("\n\n----------------------------------------------------------------------------------------------------------\n"));
 
+    printf(LIGHT_BLUE_TEXT("\nPress enter...\n"));
     getchar ();
 
     return 0;
@@ -339,12 +323,14 @@ int compile_arg (char* cmd, int* machine_code, int* count)
         int res = sscanf (cmd, "[%1[a-d]x + %d]", str, &num);
         assert (res == 2);
 
-        machine_code[(*count)++] = 0b00000111;
+        machine_code[(*count)++] = MEM_ARG | REG_ARG | IMMED_ARG;
         machine_code[(*count)++] = num;
-        machine_code[(*count)++] = str[0] - 'a' + 1;
+        machine_code[(*count)++] = str[0] - 'a' + 1; //< reg
 
         return 0;
     }
+
+    // TODO else if (have_bracket) // have_bracket && !have_plus
 
     if (have_bracket && !have_plus)
     {
@@ -356,13 +342,13 @@ int compile_arg (char* cmd, int* machine_code, int* count)
 
         if (res_1 == 1)
         {
-            machine_code[(*count)++] = 0b00000110;
+            machine_code[(*count)++] = MEM_ARG | REG_ARG;
             machine_code[(*count)++] = str[0] - 'a' + 1;
         }
 
         if (res_2 == 1)
         {
-            machine_code[(*count)++] = 0b00000101;
+            machine_code[(*count)++] = MEM_ARG | IMMED_ARG;
             machine_code[(*count)++] = num;
         }
 
@@ -377,7 +363,7 @@ int compile_arg (char* cmd, int* machine_code, int* count)
         int res = sscanf (cmd, "%1[a-d]x + %d", str, &num);
         assert (res == 2);
 
-        machine_code[(*count)++] = 0b00000011;
+        machine_code[(*count)++] = REG_ARG | IMMED_ARG;
         machine_code[(*count)++] = num;
         machine_code[(*count)++] = str[0] - 'a' + 1;
 
@@ -394,13 +380,13 @@ int compile_arg (char* cmd, int* machine_code, int* count)
 
         if (res_1 == 1)
         {
-            machine_code[(*count)++] = 0b00000010;
+            machine_code[(*count)++] = REG_ARG;
             machine_code[(*count)++] = str[0] - 'a' + 1;
         }
 
         if (res_2 == 1)
         {
-            machine_code[(*count)++] = 0b00000001;
+            machine_code[(*count)++] = IMMED_ARG;
             machine_code[(*count)++] = num;
         }
 

@@ -9,23 +9,23 @@ pop bx
 
     5:
 
-    push 9
+    push 10
     push ax
     sub
-    push 9
+    push 10
     push ax
     sub
     mul
-    push 4
+    push 7
     push bx
     sub
-    push 4
+    push 7
     push bx
     sub
     mul
     add
     pop cx
-    push 20
+    push 40
     push cx
 
     ja 7:
@@ -56,7 +56,7 @@ add
 pop bx
 
 push bx
-push 10
+push 14
 
 ja 6:
 

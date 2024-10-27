@@ -5,94 +5,33 @@
 #include <math.h>
 #include <string.h>
 
+#include "../include/enum.h"
 #include "stack.h"
-#include "color_print.h"
+#include "../include/color_print.h"
+#include "struct.h"
+#include "processor.h"
 
-#define REG_SIZE 10
-#define RAM_SIZE 250
-
-enum operartion_code
+int main (const int argc, const char* argv[])
 {
-    PUSH_CODE  =  1,
-    POP_CODE   =  2,
-    ADD_CODE   =  3,
-    SUB_CODE   =  4,
-    MUL_CODE   =  5,
-    DIV_CODE   =  6,
-    HLT_CODE   =  8,
-    JNE_CODE   =  9,
-    JA_CODE    = 10,
-    CALL_CODE  = 11,
-    RET_CODE   = 12,
-    DRAW_CODE  = 13,
-    JE_CODE    = 14,
-    JB_CODE    = 15,
-    SQRT_CODE  = 16,
-    IN_CODE    = 17,
-    OUT_CODE   = 18
-};
+    const char* in_filename = (argc == 2)? argv[1] : "math_exmpl.bin";
 
-enum errors_in_proccesor
-{
-    PROCESSOR_OK            = 0,
-    PROCESSOR_IS_NULL       = 1,
-    PROCESSOR_CODE_IS_NULL  = 2,
-    PROCESSOR_BAD_IP        = 4,
-    PROCESSOR_STACK_IS_NULL = 8
-};
+    struct header_t header = {};
+    struct SPU processor   = {};
 
-struct SPU
-{
-    int*                code;
-    int                 ip;
-    struct stack_str    stack;
-    int                 registers[REG_SIZE];
-    int                 RAM[RAM_SIZE];
-    struct stack_str    ret_addr_stack;
-};
+    if (processor_ctor (&processor, &header, in_filename) == 1)
+    {
+        printf(RED_TEXT("CTOR ERROR!"));
+        return 1;
+    }
 
-struct head
-{
-    uint32_t sig;
-    int      ver;
-    int      size;
-};
-
-int processor_dump (struct SPU* processor, struct head* header);
-
-int processor_ctor (struct SPU* processor, struct head* header);
-
-int processor_dtor (struct SPU* processor);
-
-int verifier (struct SPU* processor);
-
-int proc_error_code_output (int processor_err);
-
-int processor_assert (struct SPU* processor);
-
-int filling_the_code (struct SPU* processor, struct head* header);
-
-int* get_arg (struct SPU* processor);
-
-int machine_code_execution_func (struct SPU* processor, struct head* header, int DerDebug);
-
-int main (int argc, const char* argv[])
-{
-    int DerDebug = (argc >= 2 && strcmp (argv[1], "-d") == 0); //TODO - global var
-
-    struct head header   = {};
-    struct SPU processor = {};
-
-    processor_ctor (&processor, &header);
-
-    machine_code_execution_func (&processor, &header, DerDebug);
+    machine_code_execution_func (&processor, &header);
 
     processor_dtor (&processor);
 
     return 0;
 }
 
-int machine_code_execution_func (struct SPU* processor,  struct head* header, int DerDebug)
+int machine_code_execution_func (struct SPU* processor, struct header_t* header)
 {
     assert (processor);
     assert (header);
@@ -101,7 +40,6 @@ int machine_code_execution_func (struct SPU* processor,  struct head* header, in
     while (cycle)
     {
         printf (">>> IP = %d, COMMAND: %d\n", processor->ip, processor->code[processor->ip]);
-        if (DerDebug) processor_dump(processor, header);
 
         switch (processor->code[processor->ip])
         {
@@ -165,7 +103,11 @@ int machine_code_execution_func (struct SPU* processor,  struct head* header, in
                 stack_elem_t b = 0;
                 stack_pop  (&processor->stack, &a);
                 stack_pop  (&processor->stack, &b);
-                stack_push (&processor->stack, b / a);
+
+                if (a != 0)
+                    stack_push (&processor->stack, b / a);
+                else
+                    printf("you are trying to divide by zero...");
 
                 processor->ip += 1;
 
@@ -220,7 +162,15 @@ int machine_code_execution_func (struct SPU* processor,  struct head* header, in
                 stack_pop (&processor->stack, &b);
 
                 if (a > b)
-                    processor->ip = processor->code[processor->ip + 1];
+                {
+                    processor->ip = processor->code[processor->ip + 1]; // FIXME check if ip < size
+                    if (processor->ip >= header->size)
+                    {
+                        printf("ip < size!");
+                        assert (0);
+                    }
+
+                }
                 else
                     processor->ip += 2;
 
@@ -319,35 +269,22 @@ int machine_code_execution_func (struct SPU* processor,  struct head* header, in
     return 0;
 }
 
-int filling_the_code (struct SPU* processor, struct head* header)
+int load_code (struct SPU* processor, struct header_t* header, FILE* assm)
 {
-    FILE* assm = fopen ("tests/machine_lg.bin", "rb");
-
     assert (assm);
-    fread (processor->code, sizeof(*header), 1, assm);
-                                                            //TODO - read bin. file; struct and machine_code
-    header->sig  = (uint32_t) processor->code[0];
-    header->ver  = processor->code[1];
-    header->size = processor->code[2];
-    printf ("header->sig = %d, header->ver = %d, header->size = %d\n", processor->code[0], processor->code[1], processor->code[2] );
+    assert (processor);
+    assert (header);
+
     fread (processor->code, sizeof(int), (size_t) header->size, assm);
 
-#if 0
-    FILE* assm = fopen("tests/machine_lngg.txt", "r");
-    assert(assm);
-
-    header->size = 24;
-
-    for (int i = 0; i < header->size; i++)
-        fscanf(assm, "%d", &processor->code[i]);
-#endif
+    //TODO - read bin. file; struct and machine_code
 
     fclose (assm);
 
     return 0;
 }
 
-int processor_dump (struct SPU* processor, struct head* header)
+int processor_dump (struct SPU* processor, struct header_t* header)
 {
     printf (LIGHT_BLUE_TEXT("-----------------------------------------------------------------------------------------------------\n\n"));
 
@@ -366,10 +303,11 @@ int processor_dump (struct SPU* processor, struct head* header)
     for (int i = 0; i < processor->stack.capacity; i++)
         printf("%s" BLUE_TEXT("[%d]") "%d", (i? ", " : ""), i, processor->stack.data[i]);
 
-    printf("\nregisters: "BLUE_TEXT("[ax]")" = %d  "BLUE_TEXT("[bx]")" = %d  "BLUE_TEXT("[cx]")" = %d  "BLUE_TEXT("[dx]")" = %d",
-            processor->registers[1], processor->registers[2], processor->registers[3], processor->registers[4]);
+    printf(PURPLE_TEXT("\nregisters: "));
+    for (int i = 0; i < REG_SIZE - 5; i++)
+        printf("%s" PURPLE_TEXT("[%cx]")" = %d", (i? ", " : ""), 97 + i, processor->registers[i + 1]);
 
-    /*printf("\n\nRAM:\n");
+    printf("\n\nRAM:\n");
     for (int i = 0; i < RAM_SIZE/20; i++)
     {
         for (int j = 0; j < 20; j++) printf ("%02X ", (uint) processor->RAM [i*20 + j]);
@@ -377,42 +315,77 @@ int processor_dump (struct SPU* processor, struct head* header)
         for (int j = 0; j < 20; j++) printf ("%c ",          processor->RAM [i*20 + j]);
         printf ("\n");
     }
-    printf ("\n");*/
-
+    printf ("\n");
 
     printf (LIGHT_BLUE_TEXT("\n\n-----------------------------------------------------------------------------------------------------\n"));
 
+    printf(LIGHT_BLUE_TEXT("\nPress enter...\n"));
     getchar ();
 
     return 0;
 }
 
-int processor_ctor (struct SPU* processor, struct head* header)
+int processor_ctor (struct SPU* processor, struct header_t* header, const char* filename)
 {
     assert (processor);
+    assert (header);
 
-    processor->ip = 0;  //TODO - read_header_func
+    processor->ip = 0;
 
-    processor->code = calloc ((size_t) RAM_SIZE, sizeof(int)); //TODO - header->size
+    FILE* assm = fopen (filename, "rb");
+    assert (assm); // FIXME
 
-    filling_the_code (processor, header); //TODO - load_code
+    if (read_header (header, assm) == 1)
+        return 1;
 
-    stack_ctor (&processor->stack, 2);
+    processor->code = calloc ((size_t) header->size, sizeof(int)); // FIXME check
+
+    load_code (processor, header, assm);
+
+    stack_ctor (&processor->stack, 2); // FIXME check error
     stack_ctor (&processor->ret_addr_stack, 2);
 
     for (int i = 1; i < REG_SIZE; i++)
         processor->registers[i] = 0;
 
     for (int i = 0; i < RAM_SIZE; i++)
-        processor->RAM[i] = 0;
+        processor->RAM[i] = '.';
 
     processor_assert (processor);
 
     return 0;
 }
 
+int read_header (struct header_t* header, FILE* assm)
+{
+    assert (header);
+    assert (assm);
+
+    fread (header, sizeof(*header), 1, assm);
+
+    // TODO count_symbols from onegin and compare with header->size
+
+    printf ("\n\n"BLUE_TEXT("header->signature")" = 0x%d\n"BLUE_TEXT("header->version")" = %d\n"BLUE_TEXT("header->size")" = %d\n\n",
+            (int) header->signature, header->version, header->size );
+
+    if ((int) header->signature != SIG)
+    {
+        printf("the processor is not for you, bro");
+        return 1;
+    }
+    if (header->version != VER)
+    {
+        printf("the processor does not support this version, bro");
+        return 1;
+    }
+
+    return 0;
+}
+
 int verifier (struct SPU* processor)
 {
+    assert (processor);
+
     int processor_err = 0;
 
     if (processor == NULL)
@@ -435,22 +408,10 @@ int proc_error_code_output (int processor_err)
 
     switch (processor_err)
     {
-        case PROCESSOR_IS_NULL:
-            printf(RED_TEXT(" - PROCESSOR_IS_NULL"));
-            break;
-
-        case PROCESSOR_CODE_IS_NULL:
-            printf(RED_TEXT(" - PROCESSOR_CODE_IS_NULL"));
-            break;
-
-        case PROCESSOR_BAD_IP:
-            printf(RED_TEXT(" - PROCESSOR_BAD_IP"));
-            break;
-
-        case PROCESSOR_STACK_IS_NULL:
-            printf(RED_TEXT(" - PROCESSOR_STACK_IS_NULL"));
-            break;
-
+        case PROCESSOR_IS_NULL:       printf(RED_TEXT(" - PROCESSOR_IS_NULL"));       break;
+        case PROCESSOR_CODE_IS_NULL:  printf(RED_TEXT(" - PROCESSOR_CODE_IS_NULL"));  break;
+        case PROCESSOR_BAD_IP:        printf(RED_TEXT(" - PROCESSOR_BAD_IP"));        break;
+        case PROCESSOR_STACK_IS_NULL: printf(RED_TEXT(" - PROCESSOR_STACK_IS_NULL")); break;
         default:
             printf(RED_TEXT(" - UNKNOWN ERROR IN PROCESSOR"));
     }
@@ -462,6 +423,8 @@ int proc_error_code_output (int processor_err)
 
 int processor_assert (struct SPU* processor)
 {
+    assert (processor);
+
     if (!verifier(processor))
         return 0;
 
@@ -487,6 +450,8 @@ int processor_assert (struct SPU* processor)
 
 int processor_dtor (struct SPU* processor)
 {
+    assert (processor);
+
     free (processor->code);
 
     stack_dtor (&processor->stack);
@@ -497,18 +462,20 @@ int processor_dtor (struct SPU* processor)
 
 int* get_arg (struct SPU* processor)
 {
+    assert (processor);
+
     int  op_code    = processor->code[processor->ip++]; (void)op_code;
     int  arg_type   = processor->code[processor->ip++];
     int  arg_value  = 0;
     int* value_addr = NULL;
 
-    if (arg_type & 1) { value_addr = &processor->code[processor->ip];
-                        arg_value  =  processor->code[processor->ip++]; }
+    if (arg_type & IMMED_ARG) { value_addr = &processor->code[processor->ip];
+                                arg_value  =  processor->code[processor->ip++]; }
 
-    if (arg_type & 2) { value_addr = &processor->registers[processor->code[processor->ip]];
-                        arg_value +=  processor->registers[processor->code[processor->ip++]]; }
+    if (arg_type & REG_ARG)   { value_addr = &processor->registers[processor->code[processor->ip]];
+                                arg_value +=  processor->registers[processor->code[processor->ip++]]; }
 
-    if (arg_type & 4) { value_addr = &processor->RAM[arg_value]; }
+    if (arg_type & MEM_ARG)   { value_addr = &processor->RAM[arg_value]; }
 
     return value_addr;
 }
