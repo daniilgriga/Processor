@@ -52,7 +52,9 @@ int main (int argc, const char* argv[])
     return 0;
 }
 
-int assembly (int* machine_code, struct metka_t* metkas, const char* filename)
+#define DEF_CMD_(command, num, arg) else if (strcasecmp (cmd, #command) == 0) { machine_code[count_itr++] = command##_CODE; if (arg) compile_arg (cmd, machine_code, &count_itr); }
+
+int assembly(int* machine_code, struct metka_t* metkas, const char* filename)
 {
     FILE* people_code = fopen(filename, "r"); // NOTE rb
     if (people_code == NULL)
@@ -90,167 +92,7 @@ int assembly (int* machine_code, struct metka_t* metkas, const char* filename)
                 if (metkas[i].addr) printf (BLUE_TEXT("[%d]:")"%d ", i, metkas[i].addr);
             printf ("\n    <<< (end)\n");
         }
-
-        // TODO make function that returns enum by command name
-        // TODO switch
-
-        if (strcmp(cmd, "push") == 0)
-        {
-            machine_code[count_itr] = PUSH_CODE;
-            count_itr++;
-
-            fscanf (people_code, "%s", cmd);
-
-            compile_arg (cmd, machine_code, &count_itr);
-        }
-        else if (strcmp(cmd, "pop") == 0)
-        {
-            machine_code[count_itr] = POP_CODE;
-            count_itr++;
-
-            fscanf (people_code, "%s", cmd);
-
-            compile_arg (cmd, machine_code, &count_itr);
-        }
-        else if (strcmp(cmd, "add") == 0)
-        {
-            machine_code[count_itr] = ADD_CODE;
-            count_itr++;
-        }
-        else if (strcmp(cmd, "sub") == 0)
-        {
-            machine_code[count_itr] = SUB_CODE;
-            count_itr++;
-        }
-        else if (strcmp(cmd, "mul") == 0)
-        {
-            machine_code[count_itr] = MUL_CODE;
-            count_itr++;
-        }
-        else if (strcmp(cmd, "div") == 0)
-        {
-            machine_code[count_itr] = DIV_CODE;
-            count_itr++;
-        }
-        else if (strcmp(cmd, "out") == 0)
-        {
-            machine_code[count_itr] = OUT_CODE;
-            count_itr++;
-        }
-        else if (strcmp(cmd, "hlt") == 0)
-        {
-            machine_code[count_itr] = HLT_CODE;
-            count_itr++;
-        }
-        else if (strcmp(cmd, "ja") == 0)
-        {
-            printf (">>> >>> GOT: ja\n");
-
-            machine_code[count_itr] = JA_CODE;
-            count_itr++;
-
-            int num = 0;
-            fscanf(people_code, "%d:", &num);
-
-            printf (">>> >>> >>> num = %d\n", num);
-
-            machine_code[count_itr] = metkas[num].addr;
-
-            count_itr++;
-        }
-        else if (strcmp(cmd, "jb") == 0)
-        {
-            printf (">>> >>> GOT: jb\n");
-
-            machine_code[count_itr] = JB_CODE;
-            count_itr++;
-
-            int num = 0;
-            fscanf(people_code, "%d:", &num);
-
-            printf (">>> >>> >>> num = %d\n", num);
-
-            machine_code[count_itr] = metkas[num].addr; // TODO check if metka exists
-
-            count_itr++;
-        }
-        else if (strcmp(cmd, "call") == 0)
-        {
-            machine_code[count_itr] = CALL_CODE;
-            count_itr++;
-
-            int num = 0;
-
-            fscanf(people_code, "%d:", &num);
-
-            printf (">>> >>> >>> num = %d\n", num);
-
-            machine_code[count_itr] = metkas[num].addr;
-
-            count_itr++;
-        }
-        else if (strcmp(cmd, "ret") == 0)
-        {
-            machine_code[count_itr] = RET_CODE;
-            count_itr++;
-        }
-        else if (strcmp(cmd, "draw") == 0)
-        {
-            machine_code[count_itr] = DRAW_CODE;
-            count_itr++;
-        }
-        else if (strcmp(cmd, "je") == 0)
-        {
-            printf (">>> >>> GOT: je\n");
-
-            machine_code[count_itr] = JE_CODE;
-            count_itr++;
-
-            int num = 0;
-            fscanf(people_code, "%d:", &num);
-
-            printf (">>> >>> >>> num = %d\n", num);
-
-            machine_code[count_itr] = metkas[num].addr;
-
-            count_itr++;
-        }
-        else if (strcmp(cmd, "jne") == 0)
-        {
-            printf (">>> >>> GOT: je\n");
-
-            machine_code[count_itr] = JNE_CODE;
-            count_itr++;
-
-            int num = 0;
-            fscanf(people_code, "%d:", &num);
-
-            printf (">>> >>> >>> num = %d\n", num);
-
-            machine_code[count_itr] = metkas[num].addr;
-
-            count_itr++;
-        }
-        else if (strcmp(cmd, "sqrt") == 0)
-        {
-            machine_code[count_itr] = SQRT_CODE;
-            count_itr++;
-        }
-        else if (strcmp(cmd, "in") == 0)
-        {
-            machine_code[count_itr] = IN_CODE;
-            count_itr++;
-        }
-        else if (strcmp(cmd, "out") == 0)
-        {
-            machine_code[count_itr] = OUT_CODE;
-            count_itr++;
-        }
-        /*else
-        {
-            printf("\nERROR: unknown command\n");
-            return -1;
-        }*/ //FIXME
+        #include "../include/commands.h"
     }
 
     printf("\n");

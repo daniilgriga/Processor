@@ -60,8 +60,8 @@ ON_DBG (struct test_str
 
 enum StackCondition
 {
-    STACK_IS_OK,
-    STACK_IS_BAD
+    STACK_IS_OK  = 0,
+    STACK_IS_BAD = 1
 };
 
 enum errors

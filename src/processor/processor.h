@@ -24,4 +24,6 @@ int  machine_code_execution_func (struct SPU* processor, struct header_t* header
 
 int read_header (struct header_t* header, FILE* assm);
 
+int count_symbols (FILE* file);
+
 #endif

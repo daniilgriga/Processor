@@ -1,0 +1,118 @@
+# 0 "./enum.h"
+# 0 "<built-in>"
+# 0 "<command-line>"
+# 1 "/usr/include/stdc-predef.h" 1 3 4
+# 0 "<command-line>" 2
+# 1 "./enum.h"
+
+
+
+
+
+enum operartion_code
+{
+# 1 "./commands.h" 1
+PUSH_CODE = 1,
+POP_CODE = 2,
+ADD_CODE = 3,
+SUB_CODE = 4,
+MUL_CODE = 5,
+DIV_CODE = 6,
+HLT_CODE = 8,
+JNE_CODE = 9,
+JA_CODE = 10,
+CALL_CODE = 11,
+RET_CODE = 12,
+DRAW_CODE = 13,
+JE_CODE = 14,
+JB_CODE = 15,
+SQRT_CODE = 16,
+IN_CODE = 17,
+OUT_CODE = 18,
+# 9 "./enum.h" 2
+};
+
+
+
+enum errors_in_proccesor
+{
+    PROCESSOR_OK = 0,
+    PROCESSOR_IS_NULL = 1,
+    PROCESSOR_CODE_IS_NULL = 2,
+    PROCESSOR_BAD_IP = 4,
+    PROCESSOR_STACK_IS_NULL = 8
+};
+
+enum bites
+{
+    IMMED_ARG = 0b00000001,
+    REG_ARG = 0b00000010,
+    MEM_ARG = 0b00000100
+};
+
+
+int Assembly(int* machine_code, struct metka_t* metkas, const char* filename)
+{
+    FILE* people_code = fopen(filename, "r");
+    if (people_code == NULL)
+    {
+        fprintf (stderr, RED_TEXT ("ERROR: ")"[people_code] = NULL, file %s: ", filename);
+        perror ("");
+        return -1;
+    }
+
+    int count_mtk = 0;
+    int count_itr = 0;
+
+    while (!feof(people_code))
+    {
+        char cmd[MAX_ARR] = {};
+
+        if (fscanf(people_code, "%10s", cmd) != 1)
+            break;
+
+        printf (">>> " BLUE_TEXT("[%02d = 0x%04x]") PURPLE_TEXT("cmd")" = "YELLOW_TEXT("'%s'")"\n", count_itr, (uint)count_itr, cmd);
+
+        if (strchr(cmd, ':') != NULL)
+        {
+            int num = 0;
+            sscanf(cmd, "%d", &num);
+
+            printf (">>> >>> BLYAAAAAA METKA DETKA '%d'\n", num);
+
+            metkas[num].addr = count_itr;
+
+            count_mtk++;
+
+            printf (">>> LABELS:\n      ");
+            for (int i = 0; i < MAX_SIZE; i++)
+                if (metkas[i].addr) printf (BLUE_TEXT("[%d]:")"%d ", i, metkas[i].addr);
+            printf ("\n    <<< (end)\n");
+        }
+# 1 "./../include/commands.h" 1
+else if (strcasecmp (PUSH, "PUSH") == 0) { processor->code[processor->ip++] = PUSH_CODE; if (1) compile_arg (PUSH, machine_code, &count_itr) }
+else if (strcasecmp (POP, "POP") == 0) { processor->code[processor->ip++] = POP_CODE; if (1) compile_arg (POP, machine_code, &count_itr) }
+else if (strcasecmp (ADD, "ADD") == 0) { processor->code[processor->ip++] = ADD_CODE; if (0) compile_arg (ADD, machine_code, &count_itr) }
+else if (strcasecmp (SUB, "SUB") == 0) { processor->code[processor->ip++] = SUB_CODE; if (0) compile_arg (SUB, machine_code, &count_itr) }
+else if (strcasecmp (MUL, "MUL") == 0) { processor->code[processor->ip++] = MUL_CODE; if (0) compile_arg (MUL, machine_code, &count_itr) }
+else if (strcasecmp (DIV, "DIV") == 0) { processor->code[processor->ip++] = DIV_CODE; if (0) compile_arg (DIV, machine_code, &count_itr) }
+else if (strcasecmp (HLT, "HLT") == 0) { processor->code[processor->ip++] = HLT_CODE; if (0) compile_arg (HLT, machine_code, &count_itr) }
+else if (strcasecmp (JNE, "JNE") == 0) { processor->code[processor->ip++] = JNE_CODE; if (1) compile_arg (JNE, machine_code, &count_itr) }
+else if (strcasecmp (JA, "JA") == 0) { processor->code[processor->ip++] = JA_CODE; if (1) compile_arg (JA, machine_code, &count_itr) }
+else if (strcasecmp (CALL, "CALL") == 0) { processor->code[processor->ip++] = CALL_CODE; if (0) compile_arg (CALL, machine_code, &count_itr) }
+else if (strcasecmp (RET, "RET") == 0) { processor->code[processor->ip++] = RET_CODE; if (0) compile_arg (RET, machine_code, &count_itr) }
+else if (strcasecmp (DRAW, "DRAW") == 0) { processor->code[processor->ip++] = DRAW_CODE; if (0) compile_arg (DRAW, machine_code, &count_itr) }
+else if (strcasecmp (JE, "JE") == 0) { processor->code[processor->ip++] = JE_CODE; if (1) compile_arg (JE, machine_code, &count_itr) }
+else if (strcasecmp (JB, "JB") == 0) { processor->code[processor->ip++] = JB_CODE; if (1) compile_arg (JB, machine_code, &count_itr) }
+else if (strcasecmp (SQRT, "SQRT") == 0) { processor->code[processor->ip++] = SQRT_CODE; if (0) compile_arg (SQRT, machine_code, &count_itr) }
+else if (strcasecmp (IN, "IN") == 0) { processor->code[processor->ip++] = IN_CODE; if (0) compile_arg (IN, machine_code, &count_itr) }
+else if (strcasecmp (OUT, "OUT") == 0) { processor->code[processor->ip++] = OUT_CODE; if (0) compile_arg (OUT, machine_code, &count_itr) }
+# 69 "./enum.h" 2
+    }
+
+    printf("\n");
+
+    fclose(people_code);
+
+    return count_itr;
+}

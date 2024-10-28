@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "../include/enum.h"
 #include "stack.h"
@@ -41,6 +42,7 @@ int machine_code_execution_func (struct SPU* processor, struct header_t* header)
     {
         printf (">>> IP = %d, COMMAND: %d\n", processor->ip, processor->code[processor->ip]);
 
+        //processor_dump (processor, header);
         switch (processor->code[processor->ip])
         {
             case PUSH_CODE:
@@ -163,7 +165,7 @@ int machine_code_execution_func (struct SPU* processor, struct header_t* header)
 
                 if (a > b)
                 {
-                    processor->ip = processor->code[processor->ip + 1]; // FIXME check if ip < size
+                    processor->ip = processor->code[processor->ip + 1];
                     if (processor->ip >= header->size)
                     {
                         printf("ip < size!");
@@ -333,17 +335,21 @@ int processor_ctor (struct SPU* processor, struct header_t* header, const char* 
     processor->ip = 0;
 
     FILE* assm = fopen (filename, "rb");
-    assert (assm); // FIXME
+    assert (assm);
 
     if (read_header (header, assm) == 1)
         return 1;
 
-    processor->code = calloc ((size_t) header->size, sizeof(int)); // FIXME check
+    processor->code = calloc ((size_t) header->size, sizeof(int));
+    if (processor->code == NULL)
+        return 1;
 
     load_code (processor, header, assm);
 
-    stack_ctor (&processor->stack, 2); // FIXME check error
-    stack_ctor (&processor->ret_addr_stack, 2);
+    if ( stack_ctor (&processor->stack, 2) != 0 )
+        return 1;
+    if ( stack_ctor (&processor->ret_addr_stack, 2) != 0 )
+        return 1;
 
     for (int i = 1; i < REG_SIZE; i++)
         processor->registers[i] = 0;
@@ -361,25 +367,51 @@ int read_header (struct header_t* header, FILE* assm)
     assert (header);
     assert (assm);
 
+    int size = count_symbols (assm);
+
     fread (header, sizeof(*header), 1, assm);
 
     // TODO count_symbols from onegin and compare with header->size
-
+    printf ("\nfstat size = %ld\n", (size - sizeof(*header)) / sizeof(int) );
     printf ("\n\n"BLUE_TEXT("header->signature")" = 0x%d\n"BLUE_TEXT("header->version")" = %d\n"BLUE_TEXT("header->size")" = %d\n\n",
             (int) header->signature, header->version, header->size );
 
-    if ((int) header->signature != SIG)
+    if (header->size != (size - sizeof(*header)) / sizeof(int) )
     {
-        printf("the processor is not for you, bro");
+        printf("sizes dont equals, bro\n");
         return 1;
     }
+
+    if ((int) header->signature != SIG)
+    {
+        printf("the processor is not for you, bro\n");
+        return 1;
+    }
+
     if (header->version != VER)
     {
-        printf("the processor does not support this version, bro");
+        printf("the processor does not support this version, bro\n");
         return 1;
     }
 
     return 0;
+}
+
+int count_symbols (FILE* file)
+{
+    if (fseek(file, 0, SEEK_END) != 0)
+        return -1;
+
+    struct stat statbuf;
+
+    int count = fstat(fileno (file), &statbuf);
+    if (count == -1)
+        return -1;
+
+    if (fseek(file, 0, SEEK_SET) != 0)
+        return -1;
+
+    return statbuf.st_size;
 }
 
 int verifier (struct SPU* processor)

@@ -36,7 +36,11 @@ enum StackCondition stack_ctor (struct stack_str* stack, int capacity ON_DBG(, c
 
     ON_HASH ( calculate_hash(stack); )
 
-    STACK_ASSERT(stack, file, line, func);
+    int error_code = stack_error (stack);
+    if ( error_code )
+        return error_code;
+
+    ON_DBG ( STACK_ASSERT(stack, file, line, func); )
 
     return STACK_IS_OK;
 }
@@ -70,7 +74,7 @@ int increasing_capacity (struct stack_str* stack ON_DBG(, const char* file, int 
 
         ON_HASH ( calculate_hash(stack); )
 
-        STACK_ASSERT(stack, file, line, func);
+        ON_DBG ( STACK_ASSERT(stack, file, line, func); )
     }
 
     return 0;
@@ -86,7 +90,7 @@ int stack_push (struct stack_str* stack, stack_elem_t elem ON_DBG(, const char* 
 
     ON_HASH ( calculate_hash(stack); )
 
-    STACK_ASSERT(stack, file, line, func);
+    ON_DBG ( STACK_ASSERT(stack, file, line, func); )
 
     return 0;
 }
@@ -102,7 +106,7 @@ ON_HASH ( int calculate_hash (struct stack_str* stack)
 
 int stack_pop (struct stack_str* stack, stack_elem_t* x ON_DBG(, const char* file, int line, const char* func))
 {
-    STACK_ASSERT(stack, file, line, func);
+    ON_DBG ( STACK_ASSERT(stack, file, line, func); )
 
     if (stack->size <= 0)
         return STACK_BAD_SIZE;
@@ -336,7 +340,7 @@ int torture_stack (struct stack_str* stack, int number_canary_check ON_DBG(, con
 
     printf(LIGHT_BLUE_TEXT("stack after check canaries:\n"));
 
-    STACK_ASSERT(stack, file, line, func);
+    ON_DBG ( STACK_ASSERT(stack, file, line, func); )
 
     return 0;
 }
