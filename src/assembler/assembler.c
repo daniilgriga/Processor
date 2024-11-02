@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -52,7 +53,7 @@ int main (int argc, const char* argv[])
     return 0;
 }
 
-#define DEF_CMD_(command, num, arg) else if (strcasecmp (cmd, #command) == 0) { machine_code[count_itr++] = command##_CODE; if (arg) compile_arg (cmd, machine_code, &count_itr); }
+#define DEF_CMD_(command, num, arg) else if (strcasecmp (cmd, #command) == 0) { machine_code[count_itr++] = command##_CODE; if (arg == 1) { fscanf (people_code, "%s", cmd); compile_arg (cmd, machine_code, &count_itr); } if (arg == 2) { int numb = 0; fscanf(people_code, "%d:", &numb); printf("\n\n\n %d\n\n\n", numb); machine_code[count_itr++] = metkas[numb].addr; } }
 
 int assembly(int* machine_code, struct metka_t* metkas, const char* filename)
 {
@@ -81,7 +82,7 @@ int assembly(int* machine_code, struct metka_t* metkas, const char* filename)
             int num = 0;
             sscanf(cmd, "%d", &num);
 
-            printf (">>> >>> BLYAAAAAA METKA DETKA '%d'\n", num);
+            printf (">>> >>> METKA '%d'\n", num);
 
             metkas[num].addr = count_itr;
 
