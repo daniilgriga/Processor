@@ -53,7 +53,7 @@ int main (int argc, const char* argv[])
     return 0;
 }
 
-#define DEF_CMD_(command, num, arg) else if (strcasecmp (cmd, #command) == 0) { machine_code[count_itr++] = command##_CODE; if (arg == 1) { fscanf (people_code, "%s", cmd); compile_arg (cmd, machine_code, &count_itr); } if (arg == 2) { int numb = 0; fscanf(people_code, "%d:", &numb); printf("\n\n\n %d\n\n\n", numb); machine_code[count_itr++] = metkas[numb].addr; } }
+#define DEF_CMD_(command, num, arg) else if (strcasecmp (cmd, #command) == 0) { machine_code[count_itr++] = command##_CODE; if (arg == 1) { fscanf (people_code, "%s", cmd); compile_arg (cmd, machine_code, &count_itr); } if (arg == 2) { int numb = 0; fscanf(people_code, "%d:", &numb); fprintf(stderr, "%d\n", numb); machine_code[count_itr++] = metkas[numb].addr; } }
 
 int assembly(int* machine_code, struct metka_t* metkas, const char* filename)
 {
@@ -75,25 +75,29 @@ int assembly(int* machine_code, struct metka_t* metkas, const char* filename)
         if (fscanf(people_code, "%10s", cmd) != 1)
             break;
 
-        printf (">>> " BLUE_TEXT("[%02d = 0x%04x]") PURPLE_TEXT("cmd")" = "YELLOW_TEXT("'%s'")"\n", count_itr, (uint)count_itr, cmd);
+	if (cmd[0] == ';') // TODO strchr
+	    continue;
+
+        printf (">>> " BLUE_TEXT ("[%02d = 0x%04x]") PURPLE_TEXT ("cmd")" = "YELLOW_TEXT("'%s'")"\n", count_itr, (uint) count_itr, cmd);
 
         if (strchr(cmd, ':') != NULL)
         {
             int num = 0;
             sscanf(cmd, "%d", &num);
 
-            printf (">>> >>> METKA '%d'\n", num);
+            fprintf (stderr, ">>> >>> METKA '%d'\n", num);
 
             metkas[num].addr = count_itr;
 
             count_mtk++;
 
-            printf (">>> LABELS:\n      ");
+            fprintf (stderr, "\n>>> LABELS:\n      ");
             for (int i = 0; i < MAX_SIZE; i++)
                 if (metkas[i].addr) printf (BLUE_TEXT("[%d]:")"%d ", i, metkas[i].addr);
-            printf ("\n    <<< (end)\n");
+            fprintf (stderr, "\n    <<< (end)\n");
         }
         #include "../include/commands.h"
+
     }
 
     printf("\n");

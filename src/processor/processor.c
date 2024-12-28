@@ -42,7 +42,7 @@ int machine_code_execution_func (struct SPU* processor, struct header_t* header)
     {
         printf (">>> IP = %d, COMMAND: %d\n", processor->ip, processor->code[processor->ip]);
 
-        //processor_dump (processor, header);
+        processor_dump (processor, header);
         switch (processor->code[processor->ip])
         {
             case PUSH_CODE:
@@ -224,6 +224,14 @@ int machine_code_execution_func (struct SPU* processor, struct header_t* header)
                 break;
             }
 
+	        case JMP_CODE:
+            {
+                processor->ip = processor->code[processor->ip + 1];
+
+                break;
+            }
+
+
             case DRAW_CODE:
             {
                 for (int i = 0; i < RAM_SIZE; i++)
@@ -292,14 +300,14 @@ int processor_dump (struct SPU* processor, struct header_t* header)
 
     printf (BLUE_TEXT("code:"));
     for (int i = 0; i < header->size; i++)
-        printf (BLUE_TEXT("  %02d "), i);
+        printf (BLUE_TEXT("  %03d "), i);
 
     printf("\n     ");
 
     for (int i = 0; i < header->size; i++)
-        printf (GREEN_TEXT("  %02d "), processor->code[i]);
+        printf (GREEN_TEXT("  %03d "), processor->code[i]);
 
-    printf (PURPLE_TEXT("\n       %*s^ ip = %02d\n\n"), processor->ip * 5, "", processor->ip);
+    printf (PURPLE_TEXT("\n       %*s^ ip = %02d\n\n"), processor->ip * 6, "", processor->ip);
 
     printf (BLUE_TEXT("stack: "));
     for (int i = 0; i < processor->stack.capacity; i++)

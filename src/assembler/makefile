@@ -18,4 +18,4 @@ factorial:
 	$(CMD) $(TESTS)/factorial.asm $(TESTS)/factorial.bin	
 
 build:
-	gcc assembler.c $(CCFLAGS) -o $(CMD)
+	gcc assembler.c $(CCFLAGS) -g -o $(CMD)

@@ -293,7 +293,6 @@ int stack_assert (struct stack_str* stack, const char* file, int line, const cha
                        fprintf(stderr, YELLOW_TEXT("canary_buffer_3 = %x | canary_buffer_4 = %x\n"),
                               (unsigned int)stack->data[-1], (unsigned int)stack->data[stack->capacity]); )
 
-
     ON_HASH    ( hash_t old_hash_st = stack->hash_st;
                  stack->hash_st = 0;
                  stack->hash_st = hash_djb2((char*)stack, sizeof(*stack));

@@ -1,7 +1,7 @@
 #ifndef STRUCT_ASM_H_
 #define STRUCT_ASM_H_
 
-#define MAX_SIZE 30
+#define MAX_SIZE 500
 #define VERSION  2
 #define MAX_ARR  250
 
