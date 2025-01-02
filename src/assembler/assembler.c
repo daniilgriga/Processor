@@ -53,7 +53,7 @@ int main (int argc, const char* argv[])
     return 0;
 }
 
-#define DEF_CMD_(command, num, arg) else if (strcasecmp (cmd, #command) == 0) { machine_code[count_itr++] = command##_CODE; if (arg == 1) { fscanf (people_code, "%s", cmd); compile_arg (cmd, machine_code, &count_itr); } if (arg == 2) { int numb = 0; fscanf(people_code, "%d:", &numb); fprintf(stderr, "%d\n", numb); machine_code[count_itr++] = metkas[numb].addr; } }
+#define DEF_CMD_(command, num, arg) else if (strcasecmp (cmd, #command) == 0) { machine_code[count_itr++] = command##_CODE; if (arg == 1) { fgets (cmd, MAX_ARR, people_code); fprintf (stderr, "\n\n cmd = %s \n\n", cmd); compile_arg (cmd, machine_code, &count_itr); } if (arg == 2) { int numb = 0; fscanf(people_code, "%d:", &numb); fprintf(stderr, "%d\n", numb); machine_code[count_itr++] = metkas[numb].addr; } }
 
 int assembly(int* machine_code, struct metka_t* metkas, const char* filename)
 {
@@ -161,13 +161,18 @@ int compile_arg (char* cmd, int* machine_code, int* count)
     int have_bracket = (strchr (cmd, '[') != NULL);
     int have_plus    = (strchr (cmd, '+') != NULL);
     printf(GREEN_TEXT("have_bracket")" = "YELLOW_TEXT("%d")", "GREEN_TEXT("have_plus")" = "YELLOW_TEXT("%d")"\n\n", have_bracket, have_plus);
+    
+    fprintf (stderr, "\n\n" YELLOW_TEXT("cmd = %s") "\n\n", cmd);
 
     if (have_bracket && have_plus)
     {
         char str[MAX_SIZE] = {};
         int num = 0;
 
-        int res = sscanf (cmd, "[%1[a-d]x + %d]", str, &num);
+        int res = sscanf (cmd, " [%1[a-d]x + %d] ", str, &num);
+
+	fprintf (stderr, "\n\n" YELLOW_TEXT("cmd = '%s', str = '%s', num = %d, res = %d") "\n\n", cmd, str, num, res);
+
         assert (res == 2);
 
         machine_code[(*count)++] = MEM_ARG | REG_ARG | IMMED_ARG;
@@ -184,8 +189,8 @@ int compile_arg (char* cmd, int* machine_code, int* count)
         char str[MAX_SIZE] = {};
         int num = 0;
 
-        int res_1 = sscanf (cmd, "[%1[a-d]x]", str);
-        int res_2 = sscanf (cmd, "[%d]", &num);
+        int res_1 = sscanf (cmd, " [%1[a-d]x]", str);
+        int res_2 = sscanf (cmd, " [%d]", &num);
 
         if (res_1 == 1)
         {
@@ -207,7 +212,7 @@ int compile_arg (char* cmd, int* machine_code, int* count)
         char str[MAX_SIZE] = {};
         int num = 0;
 
-        int res = sscanf (cmd, "%1[a-d]x + %d", str, &num);
+        int res = sscanf (cmd, " %1[a-d]x + %d", str, &num);
         assert (res == 2);
 
         machine_code[(*count)++] = REG_ARG | IMMED_ARG;
@@ -222,8 +227,8 @@ int compile_arg (char* cmd, int* machine_code, int* count)
         char str[MAX_SIZE] = {};
         int num = 0;
 
-        int res_1 = sscanf (cmd, "%1[a-d]x", str);
-        int res_2 = sscanf (cmd, "%d", &num);
+        int res_1 = sscanf (cmd, " %1[a-d]x", str);
+        int res_2 = sscanf (cmd, " %d", &num);
 
         if (res_1 == 1)
         {
