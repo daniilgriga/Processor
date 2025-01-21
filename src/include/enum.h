@@ -3,7 +3,7 @@
 
 #define DEF_CMD_(cmd, num, ...) cmd##_CODE = num,
 
-enum operartion_code
+enum OperationCode
 {
     #include "commands.h"
     LAST_CODE = 50

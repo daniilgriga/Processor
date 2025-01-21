@@ -42,7 +42,7 @@ int machine_code_execution_func (struct SPU* processor, struct header_t* header)
     {
         printf (">>> IP = %d, COMMAND: %d\n", processor->ip, processor->code[processor->ip]);
 
-        processor_dump (processor, header);
+        //processor_dump (processor, header);
         switch (processor->code[processor->ip])
         {
             case PUSH_CODE:
@@ -62,56 +62,28 @@ int machine_code_execution_func (struct SPU* processor, struct header_t* header)
 
             case ADD_CODE:
             {
-                stack_elem_t a = 0;
-                stack_elem_t b = 0;
-                stack_pop  (&processor->stack, &a);
-                stack_pop  (&processor->stack, &b);
-                stack_push (&processor->stack, a + b);
-
-                processor->ip += 1;
+                basic_math_helper (processor, ADD_CODE);
 
                 break;
             }
 
             case SUB_CODE:
             {
-                stack_elem_t a = 0;
-                stack_elem_t b = 0;
-                stack_pop  (&processor->stack, &a);
-                stack_pop  (&processor->stack, &b);
-                stack_push (&processor->stack, b - a);
-
-                processor->ip += 1;
+                basic_math_helper (processor, SUB_CODE);
 
                 break;
             }
 
             case MUL_CODE:
             {
-                stack_elem_t a = 0;
-                stack_elem_t b = 0;
-                stack_pop  (&processor->stack, &a);
-                stack_pop  (&processor->stack, &b);
-                stack_push (&processor->stack, a * b);
-
-                processor->ip += 1;
+                basic_math_helper (processor, MUL_CODE);
 
                 break;
             }
 
             case DIV_CODE:
             {
-                stack_elem_t a = 0;
-                stack_elem_t b = 0;
-                stack_pop  (&processor->stack, &a);
-                stack_pop  (&processor->stack, &b);
-
-                if (a != 0)
-                    stack_push (&processor->stack, b / a);
-                else
-                    printf("you are trying to divide by zero...");
-
-                processor->ip += 1;
+                basic_math_helper (processor, DIV_CODE);
 
                 break;
             }
@@ -171,7 +143,6 @@ int machine_code_execution_func (struct SPU* processor, struct header_t* header)
                         printf("ip < size!");
                         assert (0);
                     }
-
                 }
                 else
                     processor->ip += 2;
@@ -279,6 +250,29 @@ int machine_code_execution_func (struct SPU* processor, struct header_t* header)
     return 0;
 }
 
+int basic_math_helper (struct SPU* processor, enum OperationCode operation)
+{
+    stack_elem_t a = 0;
+    stack_elem_t b = 0;
+
+    stack_pop  (&processor->stack, &a);
+    stack_pop  (&processor->stack, &b);
+
+    if      (operation == ADD_CODE)    stack_push (&processor->stack, a + b);
+    else if (operation == SUB_CODE)    stack_push (&processor->stack, b - a);
+    else if (operation == MUL_CODE)    stack_push (&processor->stack, a * b);
+
+    else if (operation == DIV_CODE &&
+                     a != 0          ) stack_push (&processor->stack, a / b);
+
+    else if (a == 0)
+        printf("you are trying to divide by zero...");
+
+    processor->ip += 1;
+
+    return 0;
+}
+
 int load_code (struct SPU* processor, struct header_t* header, FILE* assm)
 {
     assert (assm);
@@ -286,8 +280,6 @@ int load_code (struct SPU* processor, struct header_t* header, FILE* assm)
     assert (header);
 
     fread (processor->code, sizeof(int), (size_t) header->size, assm);
-
-    //TODO - read bin. file; struct and machine_code
 
     fclose (assm);
 
@@ -299,6 +291,7 @@ int processor_dump (struct SPU* processor, struct header_t* header)
     printf (LIGHT_BLUE_TEXT("-----------------------------------------------------------------------------------------------------\n\n"));
 
     printf (BLUE_TEXT("code:"));
+
     for (int i = 0; i < header->size; i++)
         printf (BLUE_TEXT("  %03d "), i);
 
@@ -310,14 +303,17 @@ int processor_dump (struct SPU* processor, struct header_t* header)
     printf (PURPLE_TEXT("\n       %*s^ ip = %02d\n\n"), processor->ip * 6, "", processor->ip);
 
     printf (BLUE_TEXT("stack: "));
+
     for (int i = 0; i < processor->stack.capacity; i++)
         printf("%s" BLUE_TEXT("[%d]") "%d", (i? ", " : ""), i, processor->stack.data[i]);
 
     printf(PURPLE_TEXT("\nregisters: "));
+
     for (int i = 0; i < REG_SIZE - 5; i++)
         printf("%s" PURPLE_TEXT("[%cx]")" = %d", (i? ", " : ""), 97 + i, processor->registers[i + 1]);
 
     printf("\n\nRAM:\n");
+
     for (int i = 0; i < RAM_SIZE/20; i++)
     {
         for (int j = 0; j < 20; j++) printf ("%02X ", (uint) processor->RAM [i*20 + j]);
@@ -330,6 +326,7 @@ int processor_dump (struct SPU* processor, struct header_t* header)
     printf (LIGHT_BLUE_TEXT("\n\n-----------------------------------------------------------------------------------------------------\n"));
 
     printf(LIGHT_BLUE_TEXT("\nPress enter...\n"));
+
     getchar ();
 
     return 0;
@@ -379,7 +376,6 @@ int read_header (struct header_t* header, FILE* assm)
 
     fread (header, sizeof(*header), 1, assm);
 
-    // TODO count_symbols from onegin and compare with header->size
     printf ("\nfstat size = %ld\n", (size - sizeof(*header)) / sizeof(int) );
     printf ("\n\n"BLUE_TEXT("header->signature")" = 0x%d\n"BLUE_TEXT("header->version")" = %d\n"BLUE_TEXT("header->size")" = %d\n\n",
             (int) header->signature, header->version, header->size );

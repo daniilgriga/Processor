@@ -26,4 +26,6 @@ int read_header (struct header_t* header, FILE* assm);
 
 int count_symbols (FILE* file);
 
+int basic_math_helper (struct SPU* processor, enum OperationCode operation);
+
 #endif

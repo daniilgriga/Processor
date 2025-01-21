@@ -53,11 +53,29 @@ int main (int argc, const char* argv[])
     return 0;
 }
 
-#define DEF_CMD_(command, num, arg) else if (strcasecmp (cmd, #command) == 0) { machine_code[count_itr++] = command##_CODE; if (arg == 1) { fgets (cmd, MAX_ARR, people_code); fprintf (stderr, "\n\n cmd = %s \n\n", cmd); compile_arg (cmd, machine_code, &count_itr); } if (arg == 2) { int numb = 0; fscanf(people_code, "%d:", &numb); fprintf(stderr, "%d\n", numb); machine_code[count_itr++] = metkas[numb].addr; } }
+#define DEF_CMD_(command, num, arg) else if (strcasecmp (cmd, #command) == 0)                                   \
+                                    {                                                                           \
+                                        machine_code[count_itr++] = command##_CODE;                             \
+                                        fprintf (stderr, BLUE_TEXT("\n%d\n\n"), machine_code[count_itr - 1]);   \
+                                                                                                                \
+                                        if (arg == 1)                                                           \
+                                        {                                                                       \
+                                            fgets (cmd, MAX_ARR, people_code);                                  \
+                                            compile_arg (cmd, machine_code, &count_itr);                        \
+                                        }                                                                       \
+                                                                                                                \
+                                        if (arg == 2)                                                           \
+                                        {                                                                       \
+                                            int numb = 0;                                                       \
+                                            fscanf(people_code, "%d:", &numb);                                  \
+                                            fprintf(stderr, "%d\n", numb);                                      \
+                                            machine_code[count_itr++] = metkas[numb].addr;                      \
+                                        }                                                                       \
+                                    }
 
 int assembly(int* machine_code, struct metka_t* metkas, const char* filename)
 {
-    FILE* people_code = fopen(filename, "r"); // NOTE rb
+    FILE* people_code = fopen(filename, "rb");
     if (people_code == NULL)
     {
         fprintf (stderr, RED_TEXT ("ERROR: ")"[people_code] = NULL, file %s: ", filename);
@@ -91,10 +109,10 @@ int assembly(int* machine_code, struct metka_t* metkas, const char* filename)
 
             count_mtk++;
 
-            fprintf (stderr, "\n>>> LABELS:\n      ");
-            for (int i = 0; i < MAX_SIZE; i++)
-                if (metkas[i].addr) printf (BLUE_TEXT("[%d]:")"%d ", i, metkas[i].addr);
-            fprintf (stderr, "\n    <<< (end)\n");
+            //fprintf (stderr, "\n>>> LABELS:\n      ");
+            //for (int i = 0; i < MAX_SIZE; i++)
+            //    if (metkas[i].addr) printf (BLUE_TEXT("[%d]:")"%d ", i, metkas[i].addr);
+            //fprintf (stderr, "\n    <<< (end)\n");
         }
         #include "../include/commands.h"
 
@@ -160,9 +178,8 @@ int compile_arg (char* cmd, int* machine_code, int* count)
 {
     int have_bracket = (strchr (cmd, '[') != NULL);
     int have_plus    = (strchr (cmd, '+') != NULL);
-    printf(GREEN_TEXT("have_bracket")" = "YELLOW_TEXT("%d")", "GREEN_TEXT("have_plus")" = "YELLOW_TEXT("%d")"\n\n", have_bracket, have_plus);
-    
-    fprintf (stderr, "\n\n" YELLOW_TEXT("cmd = %s") "\n\n", cmd);
+
+    printf(GREEN_TEXT("have_bracket")" = "YELLOW_TEXT("%d")", "GREEN_TEXT("have_plus")" = "YELLOW_TEXT("%d")"\n", have_bracket, have_plus);
 
     if (have_bracket && have_plus)
     {
@@ -171,20 +188,16 @@ int compile_arg (char* cmd, int* machine_code, int* count)
 
         int res = sscanf (cmd, " [%1[a-d]x + %d] ", str, &num);
 
-	fprintf (stderr, "\n\n" YELLOW_TEXT("cmd = '%s', str = '%s', num = %d, res = %d") "\n\n", cmd, str, num, res);
-
         assert (res == 2);
 
         machine_code[(*count)++] = MEM_ARG | REG_ARG | IMMED_ARG;
         machine_code[(*count)++] = num;
-        machine_code[(*count)++] = str[0] - 'a' + 1; //< reg
+        machine_code[(*count)++] = str[0] - 'a' + 1; // <- reg
 
         return 0;
     }
 
-    // TODO else if (have_bracket) // have_bracket && !have_plus
-
-    if (have_bracket && !have_plus)
+    else if (have_bracket && !have_plus)
     {
         char str[MAX_SIZE] = {};
         int num = 0;
@@ -207,7 +220,7 @@ int compile_arg (char* cmd, int* machine_code, int* count)
         return 0;
     }
 
-    if (!have_bracket && have_plus)
+    else if (!have_bracket && have_plus)
     {
         char str[MAX_SIZE] = {};
         int num = 0;
@@ -222,7 +235,7 @@ int compile_arg (char* cmd, int* machine_code, int* count)
         return 0;
     }
 
-    if (!have_bracket && !have_plus)
+    else if (!have_bracket && !have_plus)
     {
         char str[MAX_SIZE] = {};
         int num = 0;
